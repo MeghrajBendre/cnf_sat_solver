@@ -1,5 +1,16 @@
 import copy
 
+directions = {
+"up_walk":[(1,0),(0,-1),(0,1)],         #up,left,right
+"left_walk":[(0,-1),(-1,0),(1,0)],      #left,down,up
+"right_walk":[(0,1),(1,0),(-1,0)],      #right,up,down
+"down_walk":[(-1,0),(0,-1),(0,1)],      #down,left,right
+"up_run":[(2,0),(0,-2),(0,2)],
+"left_run":[(0,-2),(-2,0),(2,0)],
+"right_run":[(0,2),(2,0),(-2,0)],
+"down_run":[(-2,0),(0,-2),(0,2)]}
+
+
 class Grid:
     def __init__(self, rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount, grid):
         self.rows = rows
@@ -14,6 +25,7 @@ class Grid:
         self.r_run = r_run
         self.discount = discount
         self.grid = grid
+    
 
 #reads input file and does necessary formatting
 def read_input_file():
@@ -80,29 +92,58 @@ def check_values_in_object(obj):
     print "Grid: \n",obj.grid
 
 def generate_inital_trasitions(obj):
-    #[(p_walk,()),(0.5*(1-p_walk),()),(0.5*(1-p_walk),())]
+    global directions
+
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
 
             if obj.grid.has_key(k):
+                for direction in directions:
+                    #print direction,directions[direction]
+                    action(i,j,1,obj,k,direction)
+                    
             
-            #North_walk
-            #UP
-            if obj.grid.has_key(str(i+1) + "_" + str(j)):
-                temp_tup = (p_walk, str(i+1) + "_" + str(j))
-            #LEFT
-            #RIGHT
 
 
 
-# #"East_walk":[],"West_walk":[],"South_walk":[],"North_run":[],"East_run":[],"West_run":[],"South_run":[]}            
+        
             else:   #if state is not in the grid
                 continue
-'''def action_north(list, x): #list from the dict, x is 1 (walk) or 2 (run)    
-def action_south(list, x):
-def action_east(list, x):    
-def action_west(list, x):'''
+    
+    for x in obj.grid:
+        print x, obj.grid[x]
+
+def action(i, j, x, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
+    ######ADD CHECK FOR 2 i.e. if the middle state is present or not
+#UP
+    if obj.grid.has_key(str(i+directions[direction][0][0]) + "_" + str(j+directions[direction][0][1])):
+        temp_tup = (obj.p_walk, str(i+directions[direction][0][0]) + "_" + str(j+directions[direction][0][1]))
+    else:
+        temp_tup = (obj.p_walk, k)
+    obj.grid[k][direction].append(temp_tup)
+
+#LEFT
+    if obj.grid.has_key(str(i+directions[direction][1][0]) + "_" + str(j+directions[direction][1][1])):
+        temp_tup = (0.5 * (1 - obj.p_walk), str(i+directions[direction][1][0]) + "_" + str(j+directions[direction][1][1]))
+    else:
+        temp_tup = (0.5 * (1 - obj.p_walk), k)
+    obj.grid[k][direction].append(temp_tup)
+
+#RIGHT
+    if obj.grid.has_key(str(i+directions[direction][2][0]) + "_" + str(j+directions[direction][2][1])):
+        temp_tup = (0.5 * (1 - obj.p_walk), str(i+directions[direction][2][0]) + "_" + str(j+directions[direction][2][1]))
+    else:
+        temp_tup = (0.5 * (1 - obj.p_walk), k)
+    obj.grid[k][direction].append(temp_tup)
+
+
+
+
+
+'''def action_down(list, x):
+def action_left(list, x):    
+def action_right(list, x):'''
 
 def generate_grid(obj):
 
@@ -110,13 +151,12 @@ def generate_grid(obj):
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
-            obj.grid[k] = {"North_walk":[],"East_walk":[],"West_walk":[],"South_walk":[],"North_run":[],"East_run":[],"West_run":[],"South_run":[]}
+            obj.grid[k] = {"up_walk":[],"left_walk":[],"right_walk":[],"down_walk":[],"up_run":[],"left_run":[],"right_run":[],"down_run":[]}
 
     #remove states having walls from the grid
     for i in range(0, obj.wall_no):
         k = str(obj.wall_pos[i][0]) + "_" + str(obj.wall_pos[i][1])
         if obj.grid.has_key(k):
-            print k
             obj.grid.pop(k)
 
     #add corresponding probabilities to each move
