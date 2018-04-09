@@ -1,14 +1,15 @@
 import copy
+from enum import Enum
 
-directions = {
-"up_walk":[(1,0),(0,-1),(0,1)],         #up,left,right
-"left_walk":[(0,-1),(-1,0),(1,0)],      #left,down,up
-"right_walk":[(0,1),(1,0),(-1,0)],      #right,up,down
-"down_walk":[(-1,0),(0,-1),(0,1)],      #down,left,right
-"up_run":[(2,0),(0,-2),(0,2)],
-"left_run":[(0,-2),(-2,0),(2,0)],
-"right_run":[(0,2),(2,0),(-2,0)],
-"down_run":[(-2,0),(0,-2),(0,2)]}
+class directions(Enum):
+    up_walk = [(1,0),(0,-1),(0,1)]         #up,left,right
+    left_walk = [(0,-1),(-1,0),(1,0)]      #left,down,up
+    right_walk = [(0,1),(1,0),(-1,0)]      #right,up,down
+    down_walk = [(-1,0),(0,-1),(0,1)]      #down,left,right
+    up_run = [(2,0),(0,-2),(0,2)]
+    left_run = [(0,-2),(-2,0),(2,0)]
+    right_run = [(0,2),(2,0),(-2,0)]
+    down_run = [(-2,0),(0,-2),(0,2)]
 
 
 class Grid:
@@ -100,8 +101,7 @@ def generate_inital_trasitions(obj):
 
             if obj.grid.has_key(k):
                 for direction in directions:
-                    #print direction,directions[direction]
-                    action(i,j,1,obj,k,direction)
+                    action(i,j,obj,k,direction)
                     
             
 
@@ -114,28 +114,28 @@ def generate_inital_trasitions(obj):
     for x in obj.grid:
         print x, obj.grid[x]
 
-def action(i, j, x, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
+def action(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
     ######ADD CHECK FOR 2 i.e. if the middle state is present or not
 #UP
-    if obj.grid.has_key(str(i+directions[direction][0][0]) + "_" + str(j+directions[direction][0][1])):
-        temp_tup = (obj.p_walk, str(i+directions[direction][0][0]) + "_" + str(j+directions[direction][0][1]))
+    if obj.grid.has_key(str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])):
+        temp_tup = (obj.p_walk, str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1]))
     else:
         temp_tup = (obj.p_walk, k)
-    obj.grid[k][direction].append(temp_tup)
+    obj.grid[k][direction.name].append(temp_tup)
 
 #LEFT
-    if obj.grid.has_key(str(i+directions[direction][1][0]) + "_" + str(j+directions[direction][1][1])):
-        temp_tup = (0.5 * (1 - obj.p_walk), str(i+directions[direction][1][0]) + "_" + str(j+directions[direction][1][1]))
+    if obj.grid.has_key(str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])):
+        temp_tup = (0.5 * (1 - obj.p_walk), str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1]))
     else:
         temp_tup = (0.5 * (1 - obj.p_walk), k)
-    obj.grid[k][direction].append(temp_tup)
+    obj.grid[k][direction.name].append(temp_tup)
 
 #RIGHT
-    if obj.grid.has_key(str(i+directions[direction][2][0]) + "_" + str(j+directions[direction][2][1])):
-        temp_tup = (0.5 * (1 - obj.p_walk), str(i+directions[direction][2][0]) + "_" + str(j+directions[direction][2][1]))
+    if obj.grid.has_key(str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])):
+        temp_tup = (0.5 * (1 - obj.p_walk), str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1]))
     else:
         temp_tup = (0.5 * (1 - obj.p_walk), k)
-    obj.grid[k][direction].append(temp_tup)
+    obj.grid[k][direction.name].append(temp_tup)
 
 
 
