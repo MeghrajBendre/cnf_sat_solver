@@ -1,7 +1,7 @@
 import copy
 
 class Grid:
-    def __init__(self, rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount):
+    def __init__(self, rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount, grid):
         self.rows = rows
         self.cols = cols
         self.wall_no = wall_no
@@ -13,14 +13,13 @@ class Grid:
         self.r_walk = r_walk
         self.r_run = r_run
         self.discount = discount
-        
+        self.grid = grid
 
 #reads input file and does necessary formatting
 def read_input_file():
 
     input_file = open("input.txt")
     ip = input_file.read().splitlines()
-    print ip
 
     #get grid size i.e. rows and columns of the grid world
     grid_size = ip[0].split(",")
@@ -62,28 +61,74 @@ def read_input_file():
     input_file.close()    
 
     #put all the read values in the grid world object
-    temp_obj = Grid(rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount)
+    temp_obj = Grid(rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount, {})
 
     return temp_obj
 
 def check_values_in_object(obj):
-    print obj.rows
-    print obj.cols
-    print obj.wall_no
-    print obj.wall_pos
-    print obj.t_no
-    print obj.t_pos_reward
-    print obj.p_walk
-    print obj.p_run
-    print obj.r_walk
-    print obj.r_run
-    print obj.discount  
+    print "Grid rows: ",obj.rows
+    print "Grid cols: ",obj.cols
+    print "No. of walls: ",obj.wall_no
+    print "Wall positions: ",obj.wall_pos
+    print "Terminal states: ",obj.t_no
+    print "Terminal position and rewards: ",obj.t_pos_reward
+    print "p_walk: ",obj.p_walk
+    print "p_run: ",obj.p_run
+    print "r_walk: ",obj.r_walk
+    print "r_run: ",obj.r_run
+    print "Discount: ",obj.discount  
+    print "Grid: \n",obj.grid
+
+def generate_inital_trasitions(obj):
+    #[(p_walk,()),(0.5*(1-p_walk),()),(0.5*(1-p_walk),())]
+    for i in range(0, obj.rows):
+        for j in range(0, obj.cols):
+            k = str(i) + "_" + str(j)
+
+            if obj.grid.has_key(k):
+            
+            #North_walk
+            #UP
+            if obj.grid.has_key(str(i+1) + "_" + str(j)):
+                temp_tup = (p_walk, str(i+1) + "_" + str(j))
+            #LEFT
+            #RIGHT
+
+
+
+# #"East_walk":[],"West_walk":[],"South_walk":[],"North_run":[],"East_run":[],"West_run":[],"South_run":[]}            
+            else:   #if state is not in the grid
+                continue
+'''def action_north(list, x): #list from the dict, x is 1 (walk) or 2 (run)    
+def action_south(list, x):
+def action_east(list, x):    
+def action_west(list, x):'''
+
+def generate_grid(obj):
+
+    #Generate keys for the grid first
+    for i in range(0, obj.rows):
+        for j in range(0, obj.cols):
+            k = str(i) + "_" + str(j)
+            obj.grid[k] = {"North_walk":[],"East_walk":[],"West_walk":[],"South_walk":[],"North_run":[],"East_run":[],"West_run":[],"South_run":[]}
+
+    #remove states having walls from the grid
+    for i in range(0, obj.wall_no):
+        k = str(obj.wall_pos[i][0]) + "_" + str(obj.wall_pos[i][1])
+        if obj.grid.has_key(k):
+            print k
+            obj.grid.pop(k)
+
+    #add corresponding probabilities to each move
+    generate_inital_trasitions(obj)    
+
 
 def main():
     obj = read_input_file()
     #writing to the output file
     op = open("output.txt","w")
     #check_values_in_object(obj)
+    generate_grid(obj)
 
     op.close()
 
