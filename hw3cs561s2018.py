@@ -1,5 +1,8 @@
 import copy
 from enum import Enum
+import time
+start_time = time.time()
+
 
 class directions(Enum):
     up_walk = [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)]         #up,left,right
@@ -45,8 +48,8 @@ def read_input_file():
     for i in range(2,(wall_no + 2)):
         t =ip[i].split(",")
         temp_wall = []
-        temp_wall.append(int(t[0]))
-        temp_wall.append(int(t[1]))
+        temp_wall.append(int(t[0])-1)
+        temp_wall.append(int(t[1])-1)
         wall_pos.append(temp_wall)
 
     #get terminal state number, position and rewards
@@ -55,8 +58,8 @@ def read_input_file():
     for i in range(wall_no + 3, wall_no + 3 + t_no):
         t = ip[i].split(",")
         temp_t = []
-        temp_t.append(int(t[0]))                
-        temp_t.append(int(t[1]))
+        temp_t.append(int(t[0])-1)                
+        temp_t.append(int(t[1])-1)
         temp_t.append(float(t[2]))
         t_pos_reward.append(temp_t)
     
@@ -95,14 +98,17 @@ def check_values_in_object(obj):
 def generate_inital_trasitions(obj):
     global directions
 
+    cntr = 0
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
 
             if obj.grid.has_key(k):
+                cntr += 1
+                #print cntr
                 for direction in directions:
                     action(i,j,obj,k,direction)
-                    
+                    #print type(obj.grid[k][direction.name])
             
 
 
@@ -111,39 +117,66 @@ def generate_inital_trasitions(obj):
             else:   #if state is not in the grid
                 continue
     
-    for x in obj.grid['0_4']:
-        print x,obj.grid['0_4'][x]
+    #for x in obj.grid['0_0']:
+    #    print x,obj.grid['0_0'][x]
 
 def action(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
-    ######ADD CHECK FOR 2 i.e. if the middle state is present or not
+
 #UP
+    temp_tup = {}
     if obj.grid.has_key(str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])) and obj.grid.has_key(str(i+direction.value[3][0]) + "_" + str(j+direction.value[3][1])):
-        temp_tup = (obj.p_walk, str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1]))
+        if direction.name[-3:] == 'run':
+            temp_tup[str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])] = obj.p_run
+        else:
+            temp_tup[str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])] = obj.p_walk
     else:
-        temp_tup = (obj.p_walk, k)
-    obj.grid[k][direction.name].append(temp_tup)
+        if direction.name[-3:] == 'run':
+            temp_tup[k] = obj.p_run
+        else:
+            temp_tup[k] = obj.p_walk
+
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
 
 #LEFT
+    temp_tup = {}
     if obj.grid.has_key(str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])) and obj.grid.has_key(str(i+direction.value[4][0]) + "_" + str(j+direction.value[4][1])):
-        temp_tup = (0.5 * (1 - obj.p_walk), str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1]))
+        if direction.name[-3:] == 'run':
+            temp_tup[str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])] = (0.5 * (1 - obj.p_run))
+        else:
+            temp_tup[str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])] = (0.5 * (1 - obj.p_walk))
     else:
-        temp_tup = (0.5 * (1 - obj.p_walk), k)
-    obj.grid[k][direction.name].append(temp_tup)
+        if direction.name[-3:] == 'run':
+            temp_tup[k] = (0.5 * (1 - obj.p_run))#obj.p_run
+        else:
+            temp_tup[k] = (0.5 * (1 - obj.p_walk))#obj.p_walk
+
+
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
 
 #RIGHT
+    temp_tup = {}
     if obj.grid.has_key(str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])) and obj.grid.has_key(str(i+direction.value[5][0]) + "_" + str(j+direction.value[5][1])):
-        temp_tup = (0.5 * (1 - obj.p_walk), str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1]))
+        if direction.name[-3:] == 'run':
+            temp_tup[ str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])] = (0.5 * (1 - obj.p_run))
+        else:
+            temp_tup[ str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])] = (0.5 * (1 - obj.p_walk))
+
     else:
-        temp_tup = (0.5 * (1 - obj.p_walk), k)
-    obj.grid[k][direction.name].append(temp_tup)
+        if direction.name[-3:] == 'run':
+            temp_tup[k] = (0.5 * (1 - obj.p_run)) #obj.p_run
+        else:
+            temp_tup[k] = (0.5 * (1 - obj.p_walk)) #obj.p_walk
 
-
-
-
-
-'''def action_down(list, x):
-def action_left(list, x):    
-def action_right(list, x):'''
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
 
 def generate_grid(obj):
 
@@ -151,13 +184,15 @@ def generate_grid(obj):
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
-            obj.grid[k] = {"up_walk":[],"left_walk":[],"right_walk":[],"down_walk":[],"up_run":[],"left_run":[],"right_run":[],"down_run":[]}
+            obj.grid[k] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
 
+    #print len(obj.grid)
     #remove states having walls from the grid
     for i in range(0, obj.wall_no):
         k = str(obj.wall_pos[i][0]) + "_" + str(obj.wall_pos[i][1])
         if obj.grid.has_key(k):
             obj.grid.pop(k)
+    print len(obj.grid)
 
     #add corresponding probabilities to each move
     generate_inital_trasitions(obj)    
@@ -167,11 +202,12 @@ def main():
     obj = read_input_file()
     #writing to the output file
     op = open("output.txt","w")
-    #check_values_in_object(obj)
+    check_values_in_object(obj)
     generate_grid(obj)
 
-    op.close()
 
+    op.close()
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 #call to main function
 if __name__ == '__main__':
