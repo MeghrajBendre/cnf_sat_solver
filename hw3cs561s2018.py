@@ -98,14 +98,10 @@ def check_values_in_object(obj):
 def generate_inital_trasitions(obj):
     global directions
 
-    cntr = 0
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
-
             if obj.grid.has_key(k):
-                cntr += 1
-                #print cntr
                 for direction in directions:
                     if direction.name[-1] == 'n':
                         action_run(i,j,obj,k,direction)
@@ -117,8 +113,10 @@ def generate_inital_trasitions(obj):
             else:   #if state is not in the grid
                 continue
     
-    #for x in obj.grid['0_0']:
-    #    print x,obj.grid['0_0'][x]
+    for x in obj.grid['0_0']:
+        print x,obj.grid['0_0'][x]
+
+
 
 def action_walk(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
 
@@ -160,7 +158,10 @@ def action_walk(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 
         obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
     else:
         obj.grid[k][direction.name].update(temp_tup)
-##################################################################
+
+
+
+
 
 def action_run(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
 
@@ -217,12 +218,12 @@ def generate_grid(obj):
             k = str(i) + "_" + str(j)
             obj.grid[k] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
 
+    #REMOVE THIS LOOP
     #print len(obj.grid)
     #remove states having walls from the grid
     for i in range(0, obj.wall_no):
         k = str(obj.wall_pos[i][0]) + "_" + str(obj.wall_pos[i][1])
-        if obj.grid.has_key(k):
-            obj.grid.pop(k)
+        obj.grid.pop(k,None)
     print len(obj.grid)
 
     #add corresponding probabilities to each move
