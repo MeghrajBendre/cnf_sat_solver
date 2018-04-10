@@ -107,32 +107,27 @@ def generate_inital_trasitions(obj):
                 cntr += 1
                 #print cntr
                 for direction in directions:
-                    action(i,j,obj,k,direction)
+                    if direction.name[-1] == 'n':
+                        action_run(i,j,obj,k,direction)
+                    else:
+                        action_walk(i,j,obj,k,direction)
                     #print type(obj.grid[k][direction.name])
             
 
-
-
-        
             else:   #if state is not in the grid
                 continue
     
     #for x in obj.grid['0_0']:
     #    print x,obj.grid['0_0'][x]
 
-def action(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
+def action_walk(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
 
 #UP
     temp_tup = {}
-    if obj.grid.has_key(str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])) and obj.grid.has_key(str(i+direction.value[3][0]) + "_" + str(j+direction.value[3][1])):
-        if direction.name[-3:] == 'run':
-            temp_tup[str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])] = obj.p_run
-        else:
-            temp_tup[str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1])] = obj.p_walk
+    z_key = str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1]) 
+    if obj.grid.has_key(z_key):
+            temp_tup[z_key] = obj.p_walk
     else:
-        if direction.name[-3:] == 'run':
-            temp_tup[k] = obj.p_run
-        else:
             temp_tup[k] = obj.p_walk
 
     if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
@@ -142,17 +137,11 @@ def action(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (ru
 
 #LEFT
     temp_tup = {}
-    if obj.grid.has_key(str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])) and obj.grid.has_key(str(i+direction.value[4][0]) + "_" + str(j+direction.value[4][1])):
-        if direction.name[-3:] == 'run':
-            temp_tup[str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])] = (0.5 * (1 - obj.p_run))
-        else:
-            temp_tup[str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])] = (0.5 * (1 - obj.p_walk))
+    z_key = str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])
+    if obj.grid.has_key(z_key):
+            temp_tup[z_key] = (0.5 * (1 - obj.p_walk))
     else:
-        if direction.name[-3:] == 'run':
-            temp_tup[k] = (0.5 * (1 - obj.p_run))#obj.p_run
-        else:
             temp_tup[k] = (0.5 * (1 - obj.p_walk))#obj.p_walk
-
 
     if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
         obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
@@ -161,22 +150,64 @@ def action(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (ru
 
 #RIGHT
     temp_tup = {}
-    if obj.grid.has_key(str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])) and obj.grid.has_key(str(i+direction.value[5][0]) + "_" + str(j+direction.value[5][1])):
-        if direction.name[-3:] == 'run':
-            temp_tup[ str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])] = (0.5 * (1 - obj.p_run))
-        else:
-            temp_tup[ str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])] = (0.5 * (1 - obj.p_walk))
-
+    z_key = str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])
+    if obj.grid.has_key(z_key):
+            temp_tup[z_key] = (0.5 * (1 - obj.p_walk))
     else:
-        if direction.name[-3:] == 'run':
-            temp_tup[k] = (0.5 * (1 - obj.p_run)) #obj.p_run
-        else:
             temp_tup[k] = (0.5 * (1 - obj.p_walk)) #obj.p_walk
 
     if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
         obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
     else:
         obj.grid[k][direction.name].update(temp_tup)
+##################################################################
+
+def action_run(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
+
+#UP
+    temp_tup = {}
+    z_key = str(i+direction.value[0][0]) + "_" + str(j+direction.value[0][1]) 
+    if obj.grid.has_key(z_key) and obj.grid.has_key(str(i+direction.value[3][0]) + "_" + str(j+direction.value[3][1])):
+            temp_tup[z_key] = obj.p_run
+    else:
+            temp_tup[k] = obj.p_run
+
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
+
+#LEFT
+    temp_tup = {}
+    z_key = str(i+direction.value[1][0]) + "_" + str(j+direction.value[1][1])
+    if obj.grid.has_key(z_key) and obj.grid.has_key(str(i+direction.value[4][0]) + "_" + str(j+direction.value[4][1])):
+            temp_tup[z_key] = (0.5 * (1 - obj.p_run))
+    else:
+            temp_tup[k] = (0.5 * (1 - obj.p_run))#obj.p_run
+
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
+
+#RIGHT
+    temp_tup = {}
+    z_key = str(i+direction.value[2][0]) + "_" + str(j+direction.value[2][1])
+    if obj.grid.has_key(z_key) and obj.grid.has_key(str(i+direction.value[5][0]) + "_" + str(j+direction.value[5][1])):
+            temp_tup[z_key] = (0.5 * (1 - obj.p_run))
+
+    else:
+            temp_tup[k] = (0.5 * (1 - obj.p_run)) #obj.p_run
+
+    if obj.grid[k][direction.name].has_key(temp_tup.keys()[0]):
+        obj.grid[k][direction.name][temp_tup.keys()[0]] += temp_tup.values()[0]
+    else:
+        obj.grid[k][direction.name].update(temp_tup)
+
+
+
+
+
 
 def generate_grid(obj):
 
