@@ -3,6 +3,8 @@ from enum import Enum
 import time
 start_time = time.time()
 
+priority = [["up_walk",0],["down_walk",0],["left_walk",0],["right_walk",0],["up_run",0],["down_run",0],["left_run",0],["right_run",0],]
+
 
 class directions(Enum):
     up_walk = [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)]         #up,left,right
@@ -33,7 +35,7 @@ class Grid:
 
 #reads input file and does necessary formatting
 def read_input_file():
-
+    global priority    
     input_file = open("input.txt")
     ip = input_file.read().splitlines()
 
@@ -79,6 +81,11 @@ def read_input_file():
     #put all the read values in the grid world object
     temp_obj = Grid(rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount, {})
 
+    for i in range(0,4):
+        priority[i][1] = r_walk
+    for i in range(4,8):
+        priority[i][1] = r_run  
+
     return temp_obj
 
 def check_values_in_object(obj):
@@ -113,8 +120,8 @@ def generate_inital_trasitions(obj):
             else:   #if state is not in the grid
                 continue
     
-    for x in obj.grid['0_0']:
-        print x,obj.grid['0_0'][x]
+    #for x in obj.grid['0_0']:
+        #print x,obj.grid['0_0'][x]
 
 
 
@@ -229,13 +236,57 @@ def generate_grid(obj):
     #add corresponding probabilities to each move
     generate_inital_trasitions(obj)    
 
+def calculate_max(state, U2, r_walk, r_run, discount):
+    max_value = float("-inf")
+    max_value_step = ""
+    global priority
+    
+    for i in range(0,8):
+        sum = 0
+        for key in state[priority[i][0]].keys():
+            #print key
+            sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U2[key]))
+            print priority[i][0],sum
+        print "Total sum for " + str(priority[i][0]) + ": ", sum
+        if max_value < sum:
+            max_value = sum
+            max_value_step = priority[i][0]
+
+    print max_value
+    print max_value_step
+    exit()
+
+    return max_value_step
+
+def value_iteration(obj):
+    U1={}
+    epsilon = 0.001
+
+    for key in obj.grid.keys():
+        U1[key] = 0
+    while True:
+        U2 = copy.copy(U1)
+        delta = 0
+
+        for state in obj.grid.keys():
+            U2[state] = calculate_max(obj.grid[state],U2,obj.r_walk,obj.r_run, obj.discount)
+
+            #delta = max(delta, abs(U1[state] - U2[state]))
+        
+        exit()
+        if delta < epsilon * (1 - obj.discount) / obj.discount:
+            return U2
+    
+
+
 
 def main():
     obj = read_input_file()
     #writing to the output file
     op = open("output.txt","w")
-    check_values_in_object(obj)
+    #check_values_in_object(obj)
     generate_grid(obj)
+    value_iteration(obj)
 
 
     op.close()
