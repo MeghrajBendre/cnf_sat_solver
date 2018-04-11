@@ -255,8 +255,6 @@ def calculate_max(state, current_position, U2, discount, terminal_states):
         if max_value < sum:
             max_value = sum
             max_value_step = priority[i][0]
-            #print "******" + max_value_step + "**************  ",max_value
-    
 
     return max_value, max_value_step
 
@@ -267,33 +265,19 @@ def value_iteration(obj):
 
     for key in obj.grid.keys():
         U1[key] = float(0.0)
+
     while True:
         U2 = copy.deepcopy(U1)
         delta = 0
 
         for state in obj.grid.keys():
-            U1[state], moves[state] = calculate_max(obj.grid[state], state, U2, obj.discount, obj.t_pos_reward)
+            U1[state], moves[state] = calculate_max(obj.grid[state], state, U1, obj.discount, obj.t_pos_reward)
             delta = max(delta, abs(U1[state] - U2[state]))
-            '''print U1
-            print "\n"
-            print U2
-            print "\n"
-            print "Delta: ",delta
-            print "\n"
-            print "Comparison value: ",epsilon * (1 - obj.discount) / obj.discount
-            print "\n--------------------------------------"
-        
-        print "HAHAHAHAHAHA"'''
-        
+
         if delta < (epsilon * (1 - obj.discount) / obj.discount):
-            for i in range(obj.rows):
-                for j in range(obj.cols):
-                    k = str(i) + "_" + str(j)
-                    if k in obj.grid.keys():
-                        print k,U2[k],"\n"
-                               
-            
-            exit()
+            break
+                    
+    exit()
 
 def main():
     obj = read_input_file()
@@ -302,8 +286,6 @@ def main():
     #check_values_in_object(obj)
     generate_grid(obj)
     value_iteration(obj)
-
-
 
     op.close()
     print("--- %s seconds ---" % (time.time() - start_time))
