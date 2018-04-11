@@ -56,14 +56,13 @@ def read_input_file():
 
     #get terminal state number, position and rewards
     t_no = int(ip[2+wall_no])
-    t_pos_reward = []
+    t_pos_reward = {}
     for i in range(wall_no + 3, wall_no + 3 + t_no):
         t = ip[i].split(",")
-        temp_t = []
-        temp_t.append(int(t[0])-1)                
-        temp_t.append(int(t[1])-1)
-        temp_t.append(float(t[2]))
-        t_pos_reward.append(temp_t)
+        temp_t = {}
+        #print str(int(t[0])-1) + "_" + str(int(t[1])-1)
+        temp_t[str(int(t[0])-1) + "_" + str(int(t[1])-1)] = (float(t[2]))
+        t_pos_reward.update(temp_t)
     
     #read transition model, rewards, and discount factor
     p = ip[wall_no + 3 + t_no].split(",")
@@ -120,8 +119,6 @@ def generate_inital_trasitions(obj):
             else:   #if state is not in the grid
                 continue
     
-    #for x in obj.grid['0_0']:
-        #print x,obj.grid['0_0'][x]
 
 
 
@@ -223,62 +220,80 @@ def generate_grid(obj):
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
-            obj.grid[k] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
+            obj.grid[k] = {"up_walk":{},"down_walk":{},"left_walk":{},"right_walk":{},"up_run":{},"down_run":{},"left_run":{},"right_run":{}}
 
-    #REMOVE THIS LOOP
-    #print len(obj.grid)
     #remove states having walls from the grid
     for i in range(0, obj.wall_no):
         k = str(obj.wall_pos[i][0]) + "_" + str(obj.wall_pos[i][1])
         obj.grid.pop(k,None)
-    print len(obj.grid)
 
+    generate_inital_trasitions(obj) 
+
+    #remove terminal states
+    for terminal in obj.t_pos_reward.keys():
+        obj.grid[terminal] = {"up_walk":{},"down_walk":{},"left_walk":{},"right_walk":{},"up_run":{},"down_run":{},"left_run":{},"right_run":{}}
+        #print obj.grid[terminal]
     #add corresponding probabilities to each move
-    generate_inital_trasitions(obj)    
 
-def calculate_max(state, U2, r_walk, r_run, discount):
+
+    #for x in obj.grid.keys():
+       # print x,obj.grid[x],"\n"
+   
+
+def calculate_max(state, current_position, U2, discount, terminal_states):
     max_value = float("-inf")
-    max_value_step = ""
     global priority
-    
+
+    #if it is a terminal state, add only reward associated with it
+    if current_position in terminal_states.keys():
+        return terminal_states[current_position], "Exit" 
+
     for i in range(0,8):
         sum = 0
-        for key in state[priority[i][0]].keys():
-            #print key
-            sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U2[key]))
-            print priority[i][0],sum
-        print "Total sum for " + str(priority[i][0]) + ": ", sum
+        for key in state[priority[i][0]].keys():            
+            sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U2[key]))            
         if max_value < sum:
             max_value = sum
             max_value_step = priority[i][0]
+            #print "******" + max_value_step + "**************  ",max_value
+    
 
-    print max_value
-    print max_value_step
-    exit()
-
-    return max_value_step
+    return max_value, max_value_step
 
 def value_iteration(obj):
     U1={}
+    moves = {}
     epsilon = 0.001
 
     for key in obj.grid.keys():
-        U1[key] = 0
+        U1[key] = float(0.0)
     while True:
-        U2 = copy.copy(U1)
+        U2 = copy.deepcopy(U1)
         delta = 0
 
         for state in obj.grid.keys():
-            U2[state] = calculate_max(obj.grid[state],U2,obj.r_walk,obj.r_run, obj.discount)
-
-            #delta = max(delta, abs(U1[state] - U2[state]))
+            U1[state], moves[state] = calculate_max(obj.grid[state], state, U2, obj.discount, obj.t_pos_reward)
+            delta = max(delta, abs(U1[state] - U2[state]))
+            '''print U1
+            print "\n"
+            print U2
+            print "\n"
+            print "Delta: ",delta
+            print "\n"
+            print "Comparison value: ",epsilon * (1 - obj.discount) / obj.discount
+            print "\n--------------------------------------"
         
-        exit()
-        if delta < epsilon * (1 - obj.discount) / obj.discount:
-            return U2
-    
-
-
+        print "HAHAHAHAHAHA"'''
+        
+        if delta < (epsilon * (1 - obj.discount) / obj.discount):
+            for i in range(obj.rows):
+                for j in range(obj.cols):
+                    k = str(i) + "_" + str(j)
+                    if k in obj.grid.keys():
+                        print k,U2[k],"\n"
+                               
+            
+            exit()
 
 def main():
     obj = read_input_file()
@@ -287,6 +302,7 @@ def main():
     #check_values_in_object(obj)
     generate_grid(obj)
     value_iteration(obj)
+
 
 
     op.close()
