@@ -3,18 +3,18 @@ from enum import Enum
 import time
 start_time = time.time()
 
-priority = [["Walk_Up",0],["Walk_Down",0],["Walk_Left",0],["Walk_Right",0],["Run_Up",0],["Run_Down",0],["Run_Left",0],["Run_Right",0],]
-
+priority = [["up_walk",0],["left_walk",0],["right_walk",0],["down_walk",0],["up_run",0],["left_run",0],["right_run",0],["down_run",0],]
+print_moves = {"up_walk":"Walk Up","left_walk":"Walk Left","right_walk":"Walk Right","down_walk":"Walk Down","up_run":"Run Up","left_run":"Run Left","right_run":"Run Right","down_run":"Run Down"}
 
 class directions(Enum):
-    Walk_Up = [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)]         #up,left,right
-    Walk_Left = [(0,-1),(-1,0),(1,0),(0,-1),(-1,0),(1,0)]      #left,down,up
-    Walk_Right = [(0,1),(1,0),(-1,0),(0,1),(1,0),(-1,0)]      #right,up,down
-    Walk_Down = [(-1,0),(0,-1),(0,1),(-1,0),(0,-1),(0,1)]      #down,left,right
-    Run_Up = [(2,0),(0,-2),(0,2),(1,0),(0,-1),(0,1)]
-    Run_Left = [(0,-2),(-2,0),(2,0),(0,-1),(-1,0),(1,0)]
-    Run_Right = [(0,2),(2,0),(-2,0),(0,1),(1,0),(-1,0)]
-    Run_Down = [(-2,0),(0,-2),(0,2),(-1,0),(0,-1),(0,1)]
+    up_walk = [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)]         #up,left,right
+    left_walk = [(0,-1),(-1,0),(1,0),(0,-1),(-1,0),(1,0)]      #left,down,up
+    right_walk = [(0,1),(1,0),(-1,0),(0,1),(1,0),(-1,0)]      #right,up,down
+    down_walk = [(-1,0),(0,-1),(0,1),(-1,0),(0,-1),(0,1)]      #down,left,right
+    up_run = [(2,0),(0,-2),(0,2),(1,0),(0,-1),(0,1)]
+    left_run = [(0,-2),(-2,0),(2,0),(0,-1),(-1,0),(1,0)]
+    right_run = [(0,2),(2,0),(-2,0),(0,1),(1,0),(-1,0)]
+    down_run = [(-2,0),(0,-2),(0,2),(-1,0),(0,-1),(0,1)]
 
 
 class Grid:
@@ -220,7 +220,7 @@ def generate_grid(obj):
     for i in range(0, obj.rows):
         for j in range(0, obj.cols):
             k = str(i) + "_" + str(j)
-            obj.grid[k] = {"Walk_Up":{},"Walk_Down":{},"Walk_Left":{},"Walk_Right":{},"Run_Up":{},"Run_Down":{},"Run_Left":{},"Run_Right":{}}
+            obj.grid[k] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
 
     #remove states having walls from the grid
     for i in range(0, obj.wall_no):
@@ -231,7 +231,7 @@ def generate_grid(obj):
 
     #remove terminal states
     for terminal in obj.t_pos_reward.keys():
-        obj.grid[terminal] = {"Walk_Up":{},"Walk_Down":{},"Walk_Left":{},"Walk_Right":{},"Run_Up":{},"Run_Down":{},"Run_Left":{},"Run_Right":{}}
+        obj.grid[terminal] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
         #print obj.grid[terminal]
     #add corresponding probabilities to each move
 
@@ -263,7 +263,7 @@ def calculate_max(state, current_position, U2, discount, terminal_states):
 def value_iteration(obj):
     U1={}
     moves = {}
-    epsilon = 0.001
+    epsilon = 1e-30
 
     for key in obj.grid.keys():
         U1[key] = float(0.0)
@@ -279,6 +279,17 @@ def value_iteration(obj):
         if delta < (epsilon * (1 - obj.discount) / obj.discount):
             break
     
+    return moves
+
+def main():
+    obj = read_input_file()
+    #check_values_in_object(obj)
+    generate_grid(obj)
+    print "!! GRID DONE !!"
+    '''moves = value_iteration(obj)
+
+
+    op = open("output.txt","w")
     final_ans = []
     for i in range(0,obj.rows):
         ans = []
@@ -289,31 +300,23 @@ def value_iteration(obj):
                 m1 = (moves[k]).split("_")
                 if len(m1) == 2:
                     m2 = m1[0] + " " + m1[1]
-                    ans.append(m2)
+                    #print print_moves[moves[k]]
+                    ans.append(print_moves[moves[k]])
                 else:
                     ans.append(m1[0])
             else:
                 #print "None"
                 ans.append("None")
         final_ans.append(ans)
-    
-    for i in range(len(final_ans)-1,-1,-1):
-        for j in range(0,len(final_ans[i])):
-            print str(final_ans[i][j]) + ",",
-        print ""
 
-    
-    exit()
 
-def main():
-    obj = read_input_file()
-    #writing to the output file
-    op = open("output.txt","w")
-    #check_values_in_object(obj)
-    generate_grid(obj)
-    value_iteration(obj)
+    final_ans1 = reversed(final_ans)
+    output = []
+    for x in final_ans1:
+        output.append(",".join(x))
+    op.write("\n".join(output))  
 
-    op.close()
+    op.close()'''
     print("--- %s seconds ---" % (time.time() - start_time))
 
 #call to main function
