@@ -1,8 +1,8 @@
 import copy
 from enum import Enum
+import pickle
 import time
 start_time = time.time()
-import heapq
 
 priority = [["up_walk",0],["down_walk",0],["left_walk",0],["right_walk",0],["up_run",0],["down_run",0],["left_run",0],["right_run",0],]
 print_moves = {"up_walk":"Walk Up","left_walk":"Walk Left","right_walk":"Walk Right","down_walk":"Walk Down","up_run":"Run Up","left_run":"Run Left","right_run":"Run Right","down_run":"Run Down"}
@@ -17,10 +17,6 @@ directions = {
     "right_run" : [(0,2),(2,0),(-2,0),(0,1),(1,0),(-1,0)],
     "down_run" : [(-2,0),(0,-2),(0,2),(-1,0),(0,-1),(0,1)],
 }
-
-neighbours = [(1,0),(-1,0),(0,1),(0,-1),(2,0),(-2,0),(0,2),(0,-2)]
-P_QUEUE = []  # priority queue of states (used for prioritized sweeping)
-STATE2PRIORITY = {}  # map from a state to its priority
 
 class Grid:
     def __init__(self, rows, cols, wall_no, wall_pos, t_no, t_pos_reward, p_walk, p_run, r_walk, r_run, discount, grid):
@@ -248,10 +244,10 @@ def generate_grid(obj):
        # print x,obj.grid[x],"\n"
    
 
-def calculate_max(state, current_position, U2, discount, terminal_states):
+def calculate_max(state, current_position, U, discount, terminal_states):
     max_value = float("-inf")
     global priority
-
+    #print("--- %s seconds ---" % (time.time() - start_time))
     #if it is a terminal state, add only reward associated with it
     if current_position in terminal_states.keys():
         return terminal_states[current_position], "Exit" 
@@ -259,120 +255,74 @@ def calculate_max(state, current_position, U2, discount, terminal_states):
     for i in range(0,8):
         sum = 0
         for key in state[priority[i][0]].keys():            
-            sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U2[key]))            
+            sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U[key]))    
+                    ##probability                   Reward          gamma       next move -> 3
+            '''print state[priority[i][0]][key]
+            print priority[i][1]
+            print discount
+            print discount'''
+            #print key,U[key]
+
         if max_value < sum:
             max_value = sum
             max_value_step = priority[i][0]
 
- 
-
     return max_value, max_value_step
 
-
 def value_iteration(obj):
-    V={}
-    nV={}
+    U1={}
+    moves = {}
+    epsilon = 1e-45
+    global priority
+    U1 = {state: 0 for state in obj.grid.keys()}
 
-    
-    assert len(P_QUEUE) == len(STATE2PRIORITY) == 0
-    V = {state: 0 for state in obj.grid.keys()}
-    nV = {state: 0 for state in obj.grid.keys()}
+    while True:
+        delta = 0
+        for state in obj.grid.keys():
+            U2 = U1[state]
+            #TERMINAL STATE
+            if state in obj.t_pos_reward.keys():
+                U1[state] = obj.t_pos_reward[state] 
+            else:
+                utility_for_orientation = []
+                for i in range(0,8):
+                    sum = 0
+                    for key in obj.grid[state][priority[i][0]].keys():            
+                        sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U1[key])) 
+                    utility_for_orientation.append(sum)
+                U1[state] = max(utility_for_orientation)
+ 
+            delta = max(delta, abs(U1[state] - U2))
 
+        if delta < (epsilon * (1 - obj.discount) / obj.discount):
+            return U1
+            #break
 
-    # first iteration, we don't have anything in our priority queue, add states that will change in the next sweep:
-    for state in obj.grid.keys():
-        #nV[state], dev_null = calculate_max(obj.grid[state], state, nV, obj.discount, obj.t_pos_reward)
-        v = nV[state]
-        #TERMINAL STATE
-        if state in obj.t_pos_reward.keys():
-            nV[state] = obj.t_pos_reward[state] 
-        else:
-            utility_for_orientation = []
-            for i in range(0,8):
-                sum = 0
-                for key in obj.grid[state][priority[i][0]].keys():            
-                    sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * nV[key])) 
-                utility_for_orientation.append(sum)
-            nV[state] = max(utility_for_orientation)        
-        delta = abs(nV[state] - v)
-
-        if delta > 0:
-            heapq.heappush(P_QUEUE, (-delta, state))  # add s with priority -delta (most probable = lower value).
-            STATE2PRIORITY[state] = -delta  # keep track of its priority.
-        
-
-    # Iterate over states in the priority queue:
-    iteration = 1  # iteration index
-    while len(P_QUEUE) > 0:
-        _, s = heapq.heappop(P_QUEUE)  # pop most probable state.
-        del STATE2PRIORITY[s]  # forget its priority.
-
-        # do one Bellman Backup of current state:
-        v = V[s]  # old state-value
-        #V[s], moves[s] = calculate_max(obj.grid[s], s, V, obj.discount, obj.t_pos_reward)
-        #TERMINAL STATE
-        if s in obj.t_pos_reward.keys():
-            V[s] = obj.t_pos_reward[s] 
-        else:
-            utility_for_orientation = []
-            for i in range(0,8):
-                sum = 0
-                for key in obj.grid[s][priority[i][0]].keys():            
-                    sum +=  (obj.grid[s][priority[i][0]][key] * (priority[i][1] + obj.discount * V[key])) 
-                utility_for_orientation.append(sum)
-            V[state] = max(utility_for_orientation)
-        delta = abs(v-V[s])
-
-        
-        #Find neighbours
-        k = s.split("_")
-        neighbour_states = {}
-        for i in range(0,8):
-            a={}
-            a_key = str(int(k[0])+neighbours[i][0]) + "_" + str(int(k[1])+neighbours[i][1])
-            if obj.grid.has_key(a_key):
-                a[a_key] = 0
-                neighbour_states.update(a)
-        #print neighbour_states
-        
-        # add neighbors to the priority queue:
-        for s1 in neighbour_states:
-            max_value = 0
-            max_value_move = ""
-            for i in range(0,8):
-                sum = 0
-                for key in obj.grid[s1][priority[i][0]].keys():
-                    sum +=  (obj.grid[s1][priority[i][0]][key] * delta)
-                                
-                if max_value < sum:
-                    max_value = sum
-            new_priority = -max_value
-            #print -max_value
-            #new_priority = - max([delta * P[s1, a, s] for a in obj.grid[s])  # how much s1 is influenced by the current change.
-            if new_priority < 0:
-                # most probable = min value between current and new priority.
-                if s1 in STATE2PRIORITY and STATE2PRIORITY[s1] > new_priority:  # update element in priority queue
-                    old_priority = STATE2PRIORITY[s1]
-                    index = P_QUEUE.index((old_priority, s1))  # current index in the priority queue.
-                    P_QUEUE[index] = (new_priority, s1)  # update current priority.
-                    STATE2PRIORITY[s1] = new_priority  # keep track of the update.
-                elif s1 not in STATE2PRIORITY:  # add new state to priority queue
-                    heapq.heappush(P_QUEUE, (new_priority, s1))  # push to priority queue.
-                    STATE2PRIORITY[s1] = new_priority  # keep track of its priority.'''
-        print "Queue Length: ", len(P_QUEUE)
-        print "Iteration: ",iteration
-        iteration += 1
-
-    return V
+    '''print "Writing Pickle"
+    with open("./my_utility2.data","w") as utility2:
+        pickle.dump(U1,utility2)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    exit()'''
+    '''for i in range(obj.rows):
+        for j in range(obj.cols):
+            k = str(i) + "_" + str(j)
+            if k in obj.grid.keys():
+                print k,U2[k],"\n"'''
 
 def best_policy(obj,U):
     global priority
     moves = {}
 
     for state in obj.grid.keys():
-        #state = '0_19'
+
+        #if state in obj.t_pos_reward.keys():
+        #    continue
+        
         max_val_move = ""
-        max_val = -float("inf")
+        max_val = -1 * float("inf")
+        max_orientation = None
+        
+        
         for i in range(0,8):
             sum = 0
             #print obj.grid[state][priority[i][0]].keys()
@@ -393,6 +343,37 @@ def best_policy(obj,U):
         temp_dict[state] = max_val_move
         moves.update(temp_dict)
 
+    '''global priority
+    moves = {}
+
+    for state in obj.grid.keys():
+
+        if state in obj.t_pos_reward.keys():
+            continue
+        
+        max_val_move = ""
+        max_val = -1 * float("inf")
+        #max_orientation = None
+
+        utility_for_orientation = []
+        for i in range(0,8):
+            sum = 0
+            for key in obj.grid[state][priority[i][0]].keys():            
+                sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U[key])) 
+            utility_for_orientation.append(sum)
+        expected_utility = max(utility_for_orientation)
+        if max_val < expected_utility:
+            max_val = expected_utility
+            max_val_move = priority[i][0]
+        elif max_val == expected_utility:
+            if ORIENTATION_PRECEDENCE[priority[i][0]] < ORIENTATION_PRECEDENCE[max_val_move]:
+                max_val_move = priority[i][0]            
+
+
+        moves[state] = max_val_move'''
+
+
+
     return moves
 
 def main():
@@ -400,11 +381,9 @@ def main():
     #check_values_in_object(obj)
     generate_grid(obj)
     print "!! GRID DONE !!"  
-
     final_utility = value_iteration(obj)
-    print "!! Value Iteration Done !!"
     moves = best_policy(obj,final_utility)
-    print "!! best policy Done !!"
+
     
     wall_pos = {}
     for x in obj.wall_pos:
