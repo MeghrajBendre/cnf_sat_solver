@@ -1,21 +1,17 @@
 import copy
-from enum import Enum
-import pickle
-#import time
+import time
 from collections import deque
-
-#start_time = time.time()
+import pickle
+start_time = time.time()
 
 priority = [["up_walk",0],["down_walk",0],["left_walk",0],["right_walk",0],["up_run",0],["down_run",0],["left_run",0],["right_run",0],]
 print_moves = {"up_walk":"Walk Up","left_walk":"Walk Left","right_walk":"Walk Right","down_walk":"Walk Down","up_run":"Run Up","left_run":"Run Left","right_run":"Run Right","down_run":"Run Down"}
 neighbours = [(1,0),(-1,0),(0,-1),(0,1),(2,0),(-2,0),(0,-2),(0,2)]
-
-
 directions = {
-    "up_walk" : [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)],         #up,left,right
-    "left_walk" : [(0,-1),(-1,0),(1,0),(0,-1),(-1,0),(1,0)],      #left,down,up
-    "right_walk" : [(0,1),(1,0),(-1,0),(0,1),(1,0),(-1,0)],      #right,up,down
-    "down_walk" : [(-1,0),(0,-1),(0,1),(-1,0),(0,-1),(0,1)],      #down,left,right
+    "up_walk" : [(1,0),(0,-1),(0,1),(1,0),(0,-1),(0,1)],            #up,left,right
+    "left_walk" : [(0,-1),(-1,0),(1,0),(0,-1),(-1,0),(1,0)],        #left,down,up
+    "right_walk" : [(0,1),(1,0),(-1,0),(0,1),(1,0),(-1,0)],         #right,up,down
+    "down_walk" : [(-1,0),(0,-1),(0,1),(-1,0),(0,-1),(0,1)],        #down,left,right
     "up_run" : [(2,0),(0,-2),(0,2),(1,0),(0,-1),(0,1)],
     "left_run" : [(0,-2),(-2,0),(2,0),(0,-1),(-1,0),(1,0)],
     "right_run" : [(0,2),(2,0),(-2,0),(0,1),(1,0),(-1,0)],
@@ -65,7 +61,6 @@ def read_input_file():
     for i in range(wall_no + 3, wall_no + 3 + t_no):
         t = ip[i].split(",")
         temp_t = {}
-        #print str(int(t[0])-1) + "_" + str(int(t[1])-1)
         temp_t[str(int(t[0])-1) + "_" + str(int(t[1])-1)] = (float(t[2]))
         t_pos_reward.update(temp_t)
     
@@ -79,7 +74,6 @@ def read_input_file():
     r_run = float(r[1])
 
     discount = float(ip[wall_no + 3 + t_no + 2])
-
     input_file.close()    
 
     #put all the read values in the grid world object
@@ -116,20 +110,11 @@ def generate_inital_trasitions(obj):
             if obj.grid.has_key(k):
                 for direction in directions:
                     if direction[-1] == 'n':
-                        #print direction, directions[direction],directions[direction][0][0]
-                        
                         action_run(i,j,obj,k,direction)
                     else:
-                        #print direction, directions[direction],directions[direction][0][0]
                         action_walk(i,j,obj,k,direction)
-                    #print type(obj.grid[k][direction])
-                
-
             else:   #if state is not in the grid
                 continue
-    
-
-
 
 def action_walk(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
     global directions
@@ -171,9 +156,6 @@ def action_walk(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 
         obj.grid[k][direction][temp_tup.keys()[0]] += temp_tup.values()[0]
     else:
         obj.grid[k][direction].update(temp_tup)
-
-
-
 
 
 def action_run(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2 (run)
@@ -218,11 +200,6 @@ def action_run(i, j, obj, k, direction): #list from the dict, x is 1 (walk) or 2
     else:
         obj.grid[k][direction].update(temp_tup)
 
-
-
-
-
-
 def generate_grid(obj):
     global directions
     #Generate keys for the grid first
@@ -241,18 +218,11 @@ def generate_grid(obj):
     #remove terminal states
     for terminal in obj.t_pos_reward.keys():
         obj.grid[terminal] = {"up_walk":{},"left_walk":{},"right_walk":{},"down_walk":{},"up_run":{},"left_run":{},"right_run":{},"down_run":{}}
-        #print obj.grid[terminal]
-    #add corresponding probabilities to each move
-
-
-    #for x in obj.grid.keys():
-       # print x,obj.grid[x],"\n"
-   
 
 def calculate_max(state, current_position, U, discount, terminal_states):
     max_value = float("-inf")
     global priority
-    #print("--- %s seconds ---" % (time.time() - start_time))
+
     #if it is a terminal state, add only reward associated with it
     if current_position in terminal_states.keys():
         return terminal_states[current_position], "Exit" 
@@ -261,12 +231,6 @@ def calculate_max(state, current_position, U, discount, terminal_states):
         sum = 0
         for key in state[priority[i][0]].keys():            
             sum +=  (state[priority[i][0]][key] * (priority[i][1] + discount * U[key]))    
-                    ##probability                   Reward          gamma       next move -> 3
-            '''print state[priority[i][0]][key]
-            print priority[i][1]
-            print discount
-            print discount'''
-            #print key,U[key]
 
         if max_value < sum:
             max_value = sum
@@ -283,8 +247,10 @@ def value_iteration(obj, popped_pref_queue):
 
     while True:
         delta = 0
-        for state in popped_pref_queue:
-            U2 = U1[state]
+        for state in popped_pref_queue:#Queue
+        #for state in obj.grid.keys(): #Not using queue
+            U2 = U1[state]                       #ASYNC
+            #U2 = U1.copy()                      #SYNC
             #TERMINAL STATE
             if state in obj.t_pos_reward.keys():
                 U1[state] = obj.t_pos_reward[state] 
@@ -293,89 +259,36 @@ def value_iteration(obj, popped_pref_queue):
                 for i in range(0,8):
                     sum = 0
                     for key in obj.grid[state][priority[i][0]].keys():            
-                        sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U1[key])) 
+                        sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U1[key])) #ASYNC
+                        #sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U2[key]))  #SYNC
                     utility_for_orientation.append(sum)
                 U1[state] = max(utility_for_orientation)
  
-            delta = max(delta, abs(U1[state] - U2))
+            delta = max(delta, abs(U1[state] - U2))     #ASYNC
+            #delta = max(delta, abs(U1[state] - U2[state]))    #SYNC
 
         if delta < (epsilon * (1 - obj.discount) / obj.discount):
             return U1
-            #break
-
-    '''print "Writing Pickle"
-    with open("./my_utility2.data","w") as utility2:
-        pickle.dump(U1,utility2)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    exit()'''
-    '''for i in range(obj.rows):
-        for j in range(obj.cols):
-            k = str(i) + "_" + str(j)
-            if k in obj.grid.keys():
-                print k,U2[k],"\n"'''
 
 def best_policy(obj,U):
     global priority
     moves = {}
 
     for state in obj.grid.keys():
-
-        #if state in obj.t_pos_reward.keys():
-        #    continue
-        
         max_val_move = ""
         max_val = -1 * float("inf")
-        max_orientation = None
-        
         
         for i in range(0,8):
             sum = 0
-            #print obj.grid[state][priority[i][0]].keys()
             for key in obj.grid[state][priority[i][0]].keys(): 
-                #print obj.grid[state][priority[i][0]][key]           
                 sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U[key]))    
-                        ##probability                   Reward          gamma       next move -> 3
-            #print i,priority[i][0],sum
             if max_val < sum:
                 max_val = sum
                 max_val_move = priority[i][0]
 
-        #print state,max_val_move,sum
-        #exit()
-        #print max_val
-        #print max_val_move
         temp_dict = {}
         temp_dict[state] = max_val_move
         moves.update(temp_dict)
-
-    '''global priority
-    moves = {}
-
-    for state in obj.grid.keys():
-
-        if state in obj.t_pos_reward.keys():
-            continue
-        
-        max_val_move = ""
-        max_val = -1 * float("inf")
-        #max_orientation = None
-
-        utility_for_orientation = []
-        for i in range(0,8):
-            sum = 0
-            for key in obj.grid[state][priority[i][0]].keys():            
-                sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U[key])) 
-            utility_for_orientation.append(sum)
-        expected_utility = max(utility_for_orientation)
-        if max_val < expected_utility:
-            max_val = expected_utility
-            max_val_move = priority[i][0]
-        elif max_val == expected_utility:
-            if ORIENTATION_PRECEDENCE[priority[i][0]] < ORIENTATION_PRECEDENCE[max_val_move]:
-                max_val_move = priority[i][0]            
-
-
-        moves[state] = max_val_move'''
 
     return moves
 
@@ -385,16 +298,20 @@ def create_queue(obj):
     popped_pref_queue = []
     visited = {}
 
-
     #Put terminals in the queue
     terminals = sorted(obj.t_pos_reward.values(),reverse=True)
-    #print obj.t_pos_reward
     for terminal in terminals:
         for key, value in obj.t_pos_reward.iteritems(): 
             if value == terminal:
                 pref_queue.append(key)
-                
-    #print pref_queue    
+
+    #without queue
+    '''for terminal in obj.t_pos_reward.values():
+        for key, value in obj.t_pos_reward.iteritems(): 
+            if value == terminal:
+                pref_queue.append(key)'''
+
+
     while (pref_queue):
         x = pref_queue.popleft()
         if not (visited.has_key(x)):
@@ -405,20 +322,13 @@ def create_queue(obj):
                 y = str(obj.pairs[x][0]+neighbours[i][0]) + "_" + str(obj.pairs[x][1]+neighbours[i][1])
                 if (obj.grid.has_key(y)):
                     pref_queue.append(y)
-                    #print "Appended: ",y
-
-    #print len(obj.grid)
-    #print len(popped_pref_queue)
     return popped_pref_queue
 
 def main():
     obj = read_input_file()
     #check_values_in_object(obj)
-    #print "!! GRID DONE !!"
     generate_grid(obj)
-    #print len(obj.pairs)
     popped_pref_queue = create_queue(obj)
-    #print "Queue done"
     final_utility = value_iteration(obj, popped_pref_queue)
     moves = best_policy(obj,final_utility)
 
@@ -434,22 +344,18 @@ def main():
         output_row = []
         for column in range(obj.cols):
             state = str(row) + "_" + str(column)
-            #print state
             if state in wall_pos.keys():
-                #print state, "None"
                 output_row.append("None")
             elif state in obj.t_pos_reward.keys():
-                #print state, "Exit"
                 output_row.append("Exit")
             else:
-                #print state, print_moves[moves[state]]
                 output_row.append(print_moves[moves[state]])
         output_record.append(",".join(output_row))
     
     final_output_record = reversed(output_record)
     op.write("\n".join(final_output_record))
     op.close()
-    #print("--- %s seconds ---" % (time.time() - start_time))
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 #call to main function
 if __name__ == '__main__':
