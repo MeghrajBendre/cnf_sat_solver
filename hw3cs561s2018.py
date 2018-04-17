@@ -241,9 +241,10 @@ def calculate_max(state, current_position, U, discount, terminal_states):
 def value_iteration(obj, popped_pref_queue):
     U1={}
     moves = {}
-    epsilon = 1e-45
+    #epsilon = 1e-45
     global priority
     U1 = {state: 0 for state in obj.grid.keys()}
+    moves = {state: "" for state in obj.grid.keys()}
 
     while True:
         delta = 0
@@ -253,7 +254,8 @@ def value_iteration(obj, popped_pref_queue):
             #U2 = U1.copy()                      #SYNC
             #TERMINAL STATE
             if state in obj.t_pos_reward.keys():
-                U1[state] = obj.t_pos_reward[state] 
+                U1[state] = obj.t_pos_reward[state]
+                moves[state] = "Exit" 
             else:
                 utility_for_orientation = []
                 for i in range(0,8):
@@ -263,12 +265,13 @@ def value_iteration(obj, popped_pref_queue):
                         #sum +=  (obj.grid[state][priority[i][0]][key] * (priority[i][1] + obj.discount * U2[key]))  #SYNC
                     utility_for_orientation.append(sum)
                 U1[state] = max(utility_for_orientation)
- 
+                moves[state] = priority[utility_for_orientation.index(U1[state])][0]
             delta = max(delta, abs(U1[state] - U2))     #ASYNC
             #delta = max(delta, abs(U1[state] - U2[state]))    #SYNC
 
-        if delta < (epsilon * (1 - obj.discount) / obj.discount):
-            return U1
+        #if delta < (epsilon * (1 - obj.discount) / obj.discount):
+        if delta == 0:
+            return U1, moves
 
 def best_policy(obj,U):
     global priority
@@ -329,8 +332,8 @@ def main():
     #check_values_in_object(obj)
     generate_grid(obj)
     popped_pref_queue = create_queue(obj)
-    final_utility = value_iteration(obj, popped_pref_queue)
-    moves = best_policy(obj,final_utility)
+    final_utility, moves = value_iteration(obj, popped_pref_queue)
+    #moves = best_policy(obj,final_utility)
 
     
     wall_pos = {}
@@ -355,7 +358,7 @@ def main():
     final_output_record = reversed(output_record)
     op.write("\n".join(final_output_record))
     op.close()
-    print("--- %s seconds ---" % (time.time() - start_time))
+    #print("--- %s seconds ---" % (time.time() - start_time))
 
 #call to main function
 if __name__ == '__main__':
