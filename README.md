@@ -8,7 +8,7 @@ Uses the dpll algorithm to generate solution if one exists.
 ```
 Specify the cnf in input.txt
 Output is generated in output.txt
-python dpll.py
+python DPLL.py
 ```
 ## Input Format
 Each clause of the cnf should be specified on a new line. Each clause should consist of comma separated literals. Negation of literals should be represented by '-' prior to the pure literal. (Ex: A and -A)
